@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tic-Tac-Toe</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      padding: 0;
+      margin: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(-45deg, #f0f8ff, #cceeff, #e6ccff, #ffcccb);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      text-align: center;
+      padding: 20px;
+      min-height: 100vh;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      margin-bottom: 20px;
+      color: #222;
+      text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .mode-selector {
+      margin-bottom: 15px;
+    }
+
+    .mode-selector button {
+      padding: 10px 20px;
+      margin: 0 5px;
+      background-color: #007bff;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background 0.3s;
+    }
+
+    .mode-selector button:hover {
+      background-color: #0056b3;
+    }
+
+    .scoreboard {
+      display: flex;
+      justify-content: center;
+      gap: 50px;
+      margin: 20px 0;
+      font-size: 1.2rem;
+      color: #212529;
+    }
+
+    .game {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 12px;
+      justify-content: center;
+      margin: 20px auto;
+    }
+
+    .box {
+      width: 100px;
+      height: 100px;
+      font-size: 2.5rem;
+      font-weight: bold;
+      cursor: pointer;
+      background-color: #ffffff;
+      border: 2px solid #ced4da;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+
+    .box:disabled {
+      cursor: not-allowed;
+      background-color: #e9ecef;
+    }
+
+    .x-style {
+      color: #dc3545;
+      background-color: #ffe6e6;
+    }
+
+    .o-style {
+      color: #007bff;
+      background-color: #e6f0ff;
+    }
+
+    .highlight {
+      background-color: #d4edda !important;
+      color: #155724 !important;
+    }
+
+    .msg-container {
+      margin-bottom: 15px;
+    }
+
+    #msg {
+      font-size: 1.5rem;
+      color: #333;
+      font-weight: bold;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    #reset-btn, #new-btn {
+      padding: 10px 20px;
+      background-color: #28a745;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    #reset-btn:hover, #new-btn:hover {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Tic-Tac-Toe</h1>
+
+  <div class="mode-selector">
+    <button data-mode="pvp">Player vs Player</button>
+    <button data-mode="pvc">Player vs Computer</button>
+  </div>
+
+  <div class="scoreboard">
+    <div>X Wins: <span id="score-x">0</span></div>
+    <div>O Wins: <span id="score-o">0</span></div>
+  </div>
+
+  <div class="game">
+    <button class="box"></button>
+    <button class="box"></button>
+    <button class="box"></button>
+    <button class="box"></button>
+    <button class="box"></button>
+    <button class="box"></button>
+    <button class="box"></button>
+    <button class="box"></button>
+    <button class="box"></button>
+  </div>
+
+  <div class="msg-container">
+    <p id="msg"></p>
+  </div>
+
+  <div class="controls">
+    <button id="reset-btn">Reset</button>
+    <button id="new-btn">New Game</button>
+  </div>
+
+  <script>
+    const boxes = document.querySelectorAll(".box");
+    const resetBtn = document.getElementById("reset-btn");
+    const newGameBtn = document.getElementById("new-btn");
+    const msg = document.getElementById("msg");
+    const scoreX = document.getElementById("score-x");
+    const scoreO = document.getElementById("score-o");
+    const modeBtns = document.querySelectorAll(".mode-selector button");
+
+    let turnO = true;
+    let gameOver = false;
+    let xWins = 0;
+    let oWins = 0;
+    let currentMode = "pvp";
+
+    const winPatterns = [
+      [0,1,2],[3,4,5],[6,7,8],
+      [0,3,6],[1,4,7],[2,5,8],
+      [0,4,8],[2,4,6]
+    ];
+
+    boxes.forEach((box) => {
+      box.addEventListener("click", () => handleBoxClick(box));
+    });
+
+    function handleBoxClick(box) {
+      if (box.innerText !== "" || gameOver) return;
+
+      box.innerText = turnO ? "O" : "X";
+      box.disabled = true;
+      box.classList.add(turnO ? "o-style" : "x-style");
+
+      checkWinner();
+
+      if (!gameOver) {
+        turnO = !turnO;
+        if (currentMode === "pvc" && !turnO) {
+          setTimeout(computerMove, 500);
+        }
+      }
+    }
+
+    function checkWinner() {
+      for (let pattern of winPatterns) {
+        const [a, b, c] = pattern;
+        const val1 = boxes[a].innerText;
+        const val2 = boxes[b].innerText;
+        const val3 = boxes[c].innerText;
+
+        if (val1 && val1 === val2 && val2 === val3) {
+          boxes[a].classList.add("highlight");
+          boxes[b].classList.add("highlight");
+          boxes[c].classList.add("highlight");
+          showWinner(val1);
+          updateScore(val1);
+          gameOver = true;
+          return;
+        }
+      }
+
+      if ([...boxes].every(box => box.innerText !== "")) {
+        msg.innerText = "🤝 It's a draw!";
+        gameOver = true;
+      }
+    }
+
+    function showWinner(winner) {
+      msg.innerText = `🎉 Winner is ${winner}`;
+    }
+
+    function resetGame() {
+      boxes.forEach(box => {
+        box.innerText = "";
+        box.disabled = false;
+        box.classList.remove("highlight", "x-style", "o-style");
+      });
+      msg.innerText = "";
+      gameOver = false;
+      turnO = true;
+    }
+
+    function updateScore(winner) {
+      if (winner === "X") {
+        xWins++;
+        scoreX.innerText = xWins;
+      } else {
+        oWins++;
+        scoreO.innerText = oWins;
+      }
+    }
+
+    function computerMove() {
+      const empty = [...boxes].filter(b => b.innerText === "");
+      if (empty.length === 0 || gameOver) return;
+      const choice = empty[Math.floor(Math.random() * empty.length)];
+      choice.innerText = "X";
+      choice.disabled = true;
+      choice.classList.add("x-style");
+      checkWinner();
+      if (!gameOver) turnO = true;
+    }
+
+    resetBtn.addEventListener("click", resetGame);
+
+    newGameBtn.addEventListener("click", () => {
+      xWins = 0;
+      oWins = 0;
+      scoreX.innerText = "0";
+      scoreO.innerText = "0";
+      resetGame();
+    });
+
+    modeBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currentMode = btn.dataset.mode;
+        resetGame();
+      });
+    });
+  </script>
+
+</body>
+</html>
